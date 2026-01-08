@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, Plus, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Lora {
   name: string;
@@ -21,8 +22,17 @@ export default function UploadPage() {
   const [uploading, setUploading] = useState(false);
   const [loras, setLoras] = useState<Lora[]>([]);
   const [currentLora, setCurrentLora] = useState<Lora>({ name: "", weight: 50 });
+  const [customSampler, setCustomSampler] = useState("");
+  const [selectedSampler, setSelectedSampler] = useState("DPM++ 2M Karras");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    // 如果选择了"其他"，将自定义输入的值赋值给表单
+    if (selectedSampler === "其他") {
+      const samplerInput = e.currentTarget.elements.namedItem("sampler") as HTMLInputElement;
+      if (samplerInput) {
+        samplerInput.value = customSampler;
+      }
+    }
     e.preventDefault();
     if (!file) return;
 
@@ -243,12 +253,56 @@ export default function UploadPage() {
                 </div>
                 <div>
                   <Label htmlFor="sampler">采样器</Label>
-                  <Input
-                    id="sampler"
-                    name="sampler"
-                    defaultValue="DPM++ 2M Karras"
+                  <Select 
+                    name="sampler" 
+                    defaultValue="DPM++ 2M Karras" 
                     required
-                  />
+                    onValueChange={(value) => {
+                      setSelectedSampler(value);
+                      // 如果选择了其他，清空之前的自定义值
+                      if (value === "其他") {
+                        setCustomSampler("");
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="sampler">
+                      <SelectValue placeholder="选择采样器" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DPM++ 2M Karras">DPM++ 2M Karras</SelectItem>
+                      <SelectItem value="DPM++ 2S a Karras">DPM++ 2S a Karras</SelectItem>
+                      <SelectItem value="DPM++ SDE Karras">DPM++ SDE Karras</SelectItem>
+                      <SelectItem value="DPM++ 2M">DPM++ 2M</SelectItem>
+                      <SelectItem value="DPM++ 2S a">DPM++ 2S a</SelectItem>
+                      <SelectItem value="DPM++ SDE">DPM++ SDE</SelectItem>
+                      <SelectItem value="Euler a">Euler a</SelectItem>
+                      <SelectItem value="Euler">Euler</SelectItem>
+                      <SelectItem value="LMS">LMS</SelectItem>
+                      <SelectItem value="Heun">Heun</SelectItem>
+                      <SelectItem value="DPM2">DPM2</SelectItem>
+                      <SelectItem value="DPM2 a">DPM2 a</SelectItem>
+                      <SelectItem value="DPM fast">DPM fast</SelectItem>
+                      <SelectItem value="DPM adaptive">DPM adaptive</SelectItem>
+                      <SelectItem value="LMS Karras">LMS Karras</SelectItem>
+                      <SelectItem value="DPM2 Karras">DPM2 Karras</SelectItem>
+                      <SelectItem value="DPM2 a Karras">DPM2 a Karras</SelectItem>
+                      <SelectItem value="其他">其他</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* 当选择"其他"时显示自定义输入框 */}
+                  {selectedSampler === "其他" && (
+                    <div className="mt-2">
+                      <Input
+                        type="text"
+                        placeholder="输入自定义采样器"
+                        value={customSampler}
+                        onChange={(e) => setCustomSampler(e.target.value)}
+                        required
+                        className="mt-1"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
