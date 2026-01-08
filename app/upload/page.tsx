@@ -52,10 +52,48 @@ export default function UploadPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
+      // 文件验证
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      
+      if (selectedFile.size > maxSize) {
+        alert(`文件大小不能超过${maxSize / 1024 / 1024}MB`);
+        return;
+      }
+      
+      if (!allowedTypes.includes(selectedFile.type)) {
+        alert('只允许上传 JPG、PNG、WebP 和 GIF 格式的图片');
+        return;
+      }
+      
       setFile(selectedFile);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreview(reader.result as string);
+        // 生成压缩预览图，减少内存占用
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxPreviewSize = 800;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height && width > maxPreviewSize) {
+            height = Math.round((height * maxPreviewSize) / width);
+            width = maxPreviewSize;
+          } else if (height > maxPreviewSize) {
+            width = Math.round((width * maxPreviewSize) / height);
+            height = maxPreviewSize;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            setPreview(canvas.toDataURL('image/jpeg', 0.8));
+          }
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(selectedFile);
     }
