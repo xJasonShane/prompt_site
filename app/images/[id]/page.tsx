@@ -15,6 +15,7 @@ interface Lora {
 interface ImageDetail {
   id: string;
   url: string;
+  filename: string;
   width: number;
   height: number;
   createdAt: string;

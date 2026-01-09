@@ -1,0 +1,127 @@
+# CI Test Workflow
+# 用于在非主分支推送时执行代码质量检查和构建测试
+name: CI Test
+
+on:
+  push:
+    branches-ignore:
+      - main
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+      - '.gitignore'
+
+jobs:
+  ci-test:
+    name: CI Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    permissions:
+      contents: read
+      actions: read
+    
+    steps:
+      - name: Checkout code
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        id: setup-node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      
+      - name: Install dependencies
+        id: install-deps
+        run: |
+          echo "Installing dependencies..."
+          npm ci --legacy-peer-deps
+          echo "Dependencies installed successfully!"
+      
+      - name: Run lint check
+        id: lint
+        run: |
+          echo "Running lint check..."
+          npm run lint -- --output-file=lint-results.json --format=json
+          echo "Lint check completed!"
+        continue-on-error: true
+      
+      - name: Upload lint results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-results
+          path: lint-results.json
+      
+      - name: Run type check
+        id: typecheck
+        run: |
+          echo "Running type check..."
+          npx tsc --noEmit --pretty
+          echo "Type check completed successfully!"
+      
+      - name: Build project
+        id: build
+        run: |
+          echo "Building project..."
+          npm run build
+          echo "Build completed successfully!"
+      
+      - name: Check for test scripts
+        id: check-tests
+        run: |
+          if grep -q "test" package.json; then
+            echo "has-tests=true" >> $GITHUB_OUTPUT
+          else
+            echo "has-tests=false" >> $GITHUB_OUTPUT
+            echo "No test script found in package.json"
+          fi
+      
+      - name: Run tests
+        id: run-tests
+        if: steps.check-tests.outputs.has-tests == 'true'
+        run: |
+          echo "Running tests..."
+          npm test -- --verbose
+          echo "Tests completed successfully!"
+      
+      - name: Summary
+        id: summary
+        if: always()
+        run: |
+          echo "## CI Test Summary"
+          echo "✅ Checkout: ${{ steps.checkout.outcome }}"
+          echo "✅ Setup Node.js: ${{ steps.setup-node.outcome }}"
+          echo "✅ Install Dependencies: ${{ steps.install-deps.outcome }}"
+          echo "✅ Lint Check: ${{ steps.lint.outcome }}"
+          echo "✅ Type Check: ${{ steps.typecheck.outcome }}"
+          echo "✅ Build: ${{ steps.build.outcome }}"
+          echo "✅ Tests: ${{ steps.run-tests.outcome || 'Skipped' }}"
+          
+          # 如果有失败的步骤，输出详细信息
+          if [[ "${{ steps.lint.outcome }}" == "failure" ]]; then
+            echo "\n❌ Lint check failed. Please review the lint results artifact."
+            exit 1
+          fi
+          
+          if [[ "${{ steps.typecheck.outcome }}" == "failure" ]]; then
+            echo "\n❌ Type check failed. Please review the type errors above."
+            exit 1
+          fi
+          
+          if [[ "${{ steps.build.outcome }}" == "failure" ]]; then
+            echo "\n❌ Build failed. Please review the build errors above."
+            exit 1
+          fi
+          
+          if [[ "${{ steps.run-tests.outcome }}" == "failure" ]]; then
+            echo "\n❌ Tests failed. Please review the test results above."
+            exit 1
+          fi
+          
+          echo "\n🎉 All CI tests passed successfully!"

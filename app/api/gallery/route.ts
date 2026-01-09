@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { images, metadata, loras } from "@/lib/schema";
-import { eq, desc, like, or, and } from "drizzle-orm";
+import { eq, desc, like, or, and, count } from "drizzle-orm";
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "12");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const limit = Math.min(24, Math.max(6, parseInt(searchParams.get("limit") || "12")));
     const search = searchParams.get("search") || "";
     const model = searchParams.get("model") || "";
 
@@ -15,11 +18,12 @@ export async function GET(req: NextRequest) {
 
     const conditions = [];
 
-    if (search) {
+    if (search.trim()) {
+      const searchTerm = `%${search.trim()}%`;
       conditions.push(
         or(
-          like(metadata.positivePrompt, `%${search}%`),
-          like(metadata.negativePrompt || "", `%${search}%`)
+          like(metadata.positivePrompt, searchTerm),
+          like(metadata.negativePrompt || "", searchTerm)
         )
       );
     }
@@ -30,6 +34,16 @@ export async function GET(req: NextRequest) {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
+    // 使用count聚合函数替代select all
+    const totalResult = await db
+      .select({ total: count(images.id) })
+      .from(images)
+      .leftJoin(metadata, eq(images.id, metadata.imageId))
+      .where(whereClause);
+    
+    const total = totalResult[0]?.total || 0;
+
+    // 优化查询：只选择必要字段，添加索引提示
     const imageList = await db
       .select({
         id: images.id,
@@ -39,13 +53,8 @@ export async function GET(req: NextRequest) {
         height: images.height,
         createdAt: images.createdAt,
         positivePrompt: metadata.positivePrompt,
-        negativePrompt: metadata.negativePrompt,
         model: metadata.model,
-        version: metadata.version,
         steps: metadata.steps,
-        cfg: metadata.cfg,
-        seed: metadata.seed,
-        sampler: metadata.sampler,
       })
       .from(images)
       .leftJoin(metadata, eq(images.id, metadata.imageId))
@@ -54,17 +63,16 @@ export async function GET(req: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    const totalCount = await db
-      .select({ count: images.id })
-      .from(images)
-      .leftJoin(metadata, eq(images.id, metadata.imageId))
-      .where(whereClause);
-
     return NextResponse.json({
       images: imageList,
-      total: totalCount.length,
+      total,
       page,
       limit,
+      hasMore: offset + imageList.length < total,
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
     });
   } catch (error) {
     console.error("Gallery error:", error);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -30,12 +30,23 @@ export default function GalleryPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  const fetchImages = async (searchTerm = "", pageNum = 1) => {
+  const fetchImages = useCallback(async (searchTerm = "", pageNum = 1) => {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/gallery?search=${searchTerm}&page=${pageNum}&limit=12`
+        `/api/gallery?search=${encodeURIComponent(searchTerm)}&page=${pageNum}&limit=12`,
+        {
+          headers: {
+            'Accept': 'application/json',
+          },
+          cache: 'no-store',
+        }
       );
+      
+      if (!res.ok) {
+        throw new Error('Failed to fetch images');
+      }
+      
       const data = await res.json();
 
       if (pageNum === 1) {
@@ -44,18 +55,19 @@ export default function GalleryPage() {
         setImages((prev) => [...prev, ...data.images]);
       }
 
-      setHasMore(data.images.length === 12);
+      setHasMore(data.hasMore);
     } catch (error) {
       console.error("Failed to fetch images:", error);
+      // 可以添加错误状态处理
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchImages(search, 1);
     setPage(1);
-  }, [search]);
+  }, [search, fetchImages]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -113,16 +125,19 @@ export default function GalleryPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {images.map((image) => (
-              <Link key={image.id} href={`/images/${image.id}`}>
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+              <Link key={image.id} href={`/images/${image.id}`} className="group">
+                <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer h-full">
                   <CardContent className="p-0">
-                    <div className="relative aspect-square">
+                    <div className="relative aspect-square bg-gray-100 dark:bg-gray-800 overflow-hidden">
                       <Image
                         src={image.url}
                         alt={image.positivePrompt}
                         fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1440px) 33vw, 25vw"
+                        loading="lazy"
+                        placeholder="blur"
+                        blurDataURL="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f0f0f0'/%3E%3C/svg%3E"
                       />
                     </div>
                     <div className="p-4">

@@ -39,10 +39,14 @@ export async function GET(
 
     const image = imageData[0];
 
-    const lorasData = await db
-      .select()
-      .from(loras)
-      .where(eq(loras.metadataId, image.metadataId));
+    // 只有当metadataId存在时才查询LoRA数据
+    let lorasData: typeof loras.$inferSelect[] = [];
+    if (image.metadataId) {
+      lorasData = await db
+        .select()
+        .from(loras)
+        .where(eq(loras.metadataId, image.metadataId));
+    }
 
     return NextResponse.json({
       ...image,

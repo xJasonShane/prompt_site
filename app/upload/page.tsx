@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, Plus, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Lora {
   name: string;
@@ -21,8 +22,17 @@ export default function UploadPage() {
   const [uploading, setUploading] = useState(false);
   const [loras, setLoras] = useState<Lora[]>([]);
   const [currentLora, setCurrentLora] = useState<Lora>({ name: "", weight: 50 });
+  const [customSampler, setCustomSampler] = useState("");
+  const [selectedSampler, setSelectedSampler] = useState("DPM++ 2M Karras");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    // 如果选择了"其他"，将自定义输入的值赋值给表单
+    if (selectedSampler === "其他") {
+      const samplerInput = e.currentTarget.elements.namedItem("sampler") as HTMLInputElement;
+      if (samplerInput) {
+        samplerInput.value = customSampler;
+      }
+    }
     e.preventDefault();
     if (!file) return;
 
@@ -52,10 +62,48 @@ export default function UploadPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
+      // 文件验证
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      
+      if (selectedFile.size > maxSize) {
+        alert(`文件大小不能超过${maxSize / 1024 / 1024}MB`);
+        return;
+      }
+      
+      if (!allowedTypes.includes(selectedFile.type)) {
+        alert('只允许上传 JPG、PNG、WebP 和 GIF 格式的图片');
+        return;
+      }
+      
       setFile(selectedFile);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreview(reader.result as string);
+        // 生成压缩预览图，减少内存占用
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxPreviewSize = 800;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height && width > maxPreviewSize) {
+            height = Math.round((height * maxPreviewSize) / width);
+            width = maxPreviewSize;
+          } else if (height > maxPreviewSize) {
+            width = Math.round((width * maxPreviewSize) / height);
+            height = maxPreviewSize;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            setPreview(canvas.toDataURL('image/jpeg', 0.8));
+          }
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(selectedFile);
     }
@@ -205,12 +253,56 @@ export default function UploadPage() {
                 </div>
                 <div>
                   <Label htmlFor="sampler">采样器</Label>
-                  <Input
-                    id="sampler"
-                    name="sampler"
-                    defaultValue="DPM++ 2M Karras"
+                  <Select 
+                    name="sampler" 
+                    defaultValue="DPM++ 2M Karras" 
                     required
-                  />
+                    onValueChange={(value) => {
+                      setSelectedSampler(value);
+                      // 如果选择了其他，清空之前的自定义值
+                      if (value === "其他") {
+                        setCustomSampler("");
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="sampler">
+                      <SelectValue placeholder="选择采样器" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DPM++ 2M Karras">DPM++ 2M Karras</SelectItem>
+                      <SelectItem value="DPM++ 2S a Karras">DPM++ 2S a Karras</SelectItem>
+                      <SelectItem value="DPM++ SDE Karras">DPM++ SDE Karras</SelectItem>
+                      <SelectItem value="DPM++ 2M">DPM++ 2M</SelectItem>
+                      <SelectItem value="DPM++ 2S a">DPM++ 2S a</SelectItem>
+                      <SelectItem value="DPM++ SDE">DPM++ SDE</SelectItem>
+                      <SelectItem value="Euler a">Euler a</SelectItem>
+                      <SelectItem value="Euler">Euler</SelectItem>
+                      <SelectItem value="LMS">LMS</SelectItem>
+                      <SelectItem value="Heun">Heun</SelectItem>
+                      <SelectItem value="DPM2">DPM2</SelectItem>
+                      <SelectItem value="DPM2 a">DPM2 a</SelectItem>
+                      <SelectItem value="DPM fast">DPM fast</SelectItem>
+                      <SelectItem value="DPM adaptive">DPM adaptive</SelectItem>
+                      <SelectItem value="LMS Karras">LMS Karras</SelectItem>
+                      <SelectItem value="DPM2 Karras">DPM2 Karras</SelectItem>
+                      <SelectItem value="DPM2 a Karras">DPM2 a Karras</SelectItem>
+                      <SelectItem value="其他">其他</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* 当选择"其他"时显示自定义输入框 */}
+                  {selectedSampler === "其他" && (
+                    <div className="mt-2">
+                      <Input
+                        type="text"
+                        placeholder="输入自定义采样器"
+                        value={customSampler}
+                        onChange={(e) => setCustomSampler(e.target.value)}
+                        required
+                        className="mt-1"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
