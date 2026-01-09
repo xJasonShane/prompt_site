@@ -1,75 +1,115 @@
 # AI绘图元数据管理网站
 
-一个功能完整的AI绘图元数据管理系统,支持在Cloudflare Pages、Vercel、GitHub Pages等主流平台部署。
+<div align="center">
+  <img src="https://img.shields.io/badge/Next.js-14-000000?style=for-the-badge&logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind%20CSS-3-38B2AC?style=for-the-badge&logo=tailwind-css" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/Cloudflare%20R2-000000?style=for-the-badge&logo=cloudflare" alt="Cloudflare R2" />
+  <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="MIT License" />
+</div>
 
-## 功能特性
+一个功能完整的AI绘图元数据管理系统，支持在Cloudflare Pages、Vercel、GitHub Pages等主流平台部署。
 
-- 📤 图片上传与存储 (支持Cloudflare R2)
-- 📝 完整的元数据管理
+## ✨ 功能特性
+
+- 📤 **图片上传与存储** - 支持Cloudflare R2对象存储，安全可靠
+- 📝 **完整的元数据管理**
   - 正向/负向提示词
-  - AI模型信息 (名称、版本)
-  - 生成参数 (步数、CFG、种子、采样器、尺寸)
+  - AI模型信息（名称、版本）
+  - 生成参数（步数、CFG、种子、采样器、尺寸）
   - LoRA模型管理
-- 🖼️ 响应式图片展示 (瀑布流布局)
-- 🔍 搜索与筛选功能
-- 👤 用户认证系统 (NextAuth.js)
-- 🌙 深色模式支持
-- 📱 完全响应式设计
+- 🖼️ **响应式图片展示** - 瀑布流布局，适配各种设备
+- 🔍 **强大的搜索功能** - 支持按提示词、模型、参数等多维度搜索
+- 👤 **用户认证系统** - 基于NextAuth.js，支持多种登录方式
+- 🌙 **深色模式支持** - 自动跟随系统或手动切换
+- 📱 **完全响应式设计** - 移动端、平板、桌面端完美适配
+- 🚀 **高性能** - 优化的图片加载、API响应和数据库查询
+- 🔧 **CI/CD集成** - 自动测试和部署
 
-## 技术栈
+## 🛠️ 技术栈
 
-- **前端框架**: Next.js 14 (App Router)
-- **UI组件**: shadcn/ui (基于Radix UI)
-- **样式方案**: Tailwind CSS
-- **数据库**: SQLite + Drizzle ORM
-- **对象存储**: Cloudflare R2 (S3兼容)
-- **认证系统**: NextAuth.js v5
-- **表单验证**: React Hook Form + Zod
-- **语言**: TypeScript
+| 类别 | 技术 | 版本 |
+|------|------|------|
+| 前端框架 | Next.js | 14.x |
+| UI组件库 | shadcn/ui | 最新 |
+| 样式方案 | Tailwind CSS | 3.x |
+| 数据库 | SQLite + Drizzle ORM | 最新 |
+| 对象存储 | Cloudflare R2 | 最新 |
+| 认证系统 | NextAuth.js | 5.x |
+| 表单验证 | React Hook Form + Zod | 最新 |
+| 语言 | TypeScript | 5.x |
 
-## 快速开始
+## 🚀 快速开始
 
 ### 环境要求
 
-- Node.js 18+
-- npm 或 yarn
+| 依赖 | 版本要求 | 说明 |
+|------|----------|------|
+| Node.js | 18.17+ 或 20.6+ | 推荐使用 Node.js 20 LTS |
+| 包管理器 | npm 9+ 或 yarn 1.x | 建议使用 npm |
+| Git | 最新稳定版 | 用于版本控制 |
+| Cloudflare 账号 | - | 用于 R2 对象存储和 Pages 部署 |
 
-### 安装依赖
+### 安装步骤
+
+1. **克隆仓库**
+
+```bash
+git clone https://github.com/your-username/prompt-site.git
+cd prompt-site
+```
+
+2. **安装依赖**
 
 ```bash
 npm install
+# 或使用 yarn（不推荐，可能存在兼容性问题）
+# yarn install
 ```
 
-### 环境配置
+3. **配置环境变量**
 
-复制 `.env.example` 为 `.env` 并配置以下变量:
+   - 复制示例环境变量文件
+   ```bash
+   cp .env.example .env.local
+   ```
+   
+   - 使用文本编辑器打开 `.env.local`，根据实际情况配置以下变量：
+   ```env
+   # 数据库配置（使用 SQLite，无需额外安装）
+   DATABASE_URL="file:./prompt_site.db"
+   
+   # NextAuth 配置
+   NEXTAUTH_SECRET="your-secret-key-here"  # 用于加密会话，必须唯一且复杂
+   NEXTAUTH_URL="http://localhost:3000"    # 开发环境使用本地地址
+   
+   # Cloudflare R2 存储配置
+   R2_ENDPOINT="https://your-account-id.r2.cloudflarestorage.com"  # R2 端点 URL
+   R2_ACCESS_KEY_ID="your-access-key-id"                            # R2 访问密钥 ID
+   R2_SECRET_ACCESS_KEY="your-secret-access-key"                    # R2 秘密访问密钥
+   R2_BUCKET_NAME="prompt-images"                                  # R2 存储桶名称
+   ```
+   
+   - **生成安全的 NEXTAUTH_SECRET**：
+   ```bash
+   # 在 Linux/macOS 上
+   openssl rand -base64 32
+   
+   # 在 Windows PowerShell 上
+   [Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+   ```
 
-```env
-# Database
-DATABASE_URL="file:./prompt_site.db"
-
-# NextAuth
-NEXTAUTH_SECRET="your-secret-key-here"
-NEXTAUTH_URL="http://localhost:3000"
-
-# Cloudflare R2 Storage
-R2_ENDPOINT="https://your-account-id.r2.cloudflarestorage.com"
-R2_ACCESS_KEY_ID="your-access-key-id"
-R2_SECRET_ACCESS_KEY="your-secret-access-key"
-R2_BUCKET_NAME="prompt-images"
-```
-
-### 数据库初始化
+4. **初始化数据库**
 
 ```bash
-# 生成数据库迁移文件
+# 生成数据库迁移文件（首次使用）
 npm run db:generate
 
-# 应用迁移
+# 将数据库结构推送到 SQLite 文件
 npm run db:push
 ```
 
-### 启动开发服务器
+5. **启动开发服务器**
 
 ```bash
 npm run dev
@@ -77,167 +117,56 @@ npm run dev
 
 访问 [http://localhost:3000](http://localhost:3000) 查看应用。
 
-## 部署指南
+### 验证安装
 
-### Cloudflare Pages
+应用启动后，您应该能够：
+- 访问首页并看到欢迎界面
+- 点击"上传"按钮进入上传页面
+- 看到登录/注册选项
 
-1. 构建项目:
-```bash
-npm run build
-```
+如果遇到问题，请检查：
+- 环境变量配置是否正确
+- 数据库是否成功初始化
+- 端口 3000 是否被占用
 
-2. 使用Wrangler部署:
-```bash
-npx wrangler pages deploy .next
-```
+## 📦 部署指南
 
-3. 在Cloudflare Dashboard配置环境变量
+详细的部署教程已拆分到独立的文档中，您可以通过以下方式访问：
 
-### Vercel
+- 📄 **完整部署指南**：查看 [DEPLOYMENT.md](./DEPLOYMENT.md) 文件
 
-1. 推送代码到GitHub
-2. 在Vercel导入项目
-3. 配置环境变量
-4. 自动部署
+### 部署选项
 
-### GitHub Pages
+系统支持在多种平台部署，具体步骤请参考部署指南：
 
-1. 修改 `next.config.js`:
-```javascript
-module.exports = {
-  output: 'export',
-  images: {
-    unoptimized: true,
-  },
-};
-```
+| 平台 | 部署文档位置 |
+|------|--------------|
+| Cloudflare Pages | [DEPLOYMENT.md#1-cloudflare-pages-部署](./DEPLOYMENT.md#1-cloudflare-pages-部署) |
+| Vercel | [DEPLOYMENT.md#2-vercel-部署](./DEPLOYMENT.md#2-vercel-部署) |
+| GitHub Pages | [DEPLOYMENT.md#3-github-pages-部署](./DEPLOYMENT.md#3-github-pages-部署) |
+| Docker | [DEPLOYMENT.md#4-docker-部署](./DEPLOYMENT.md#4-docker-部署) |
 
-2. 构建静态站点:
-```bash
-npm run build
-```
+### 环境变量快速参考
 
-3. 推送到GitHub,自动触发GitHub Actions部署
+部署前需要配置以下关键环境变量：
 
-## 项目结构
+| 变量名 | 描述 |
+|--------|------|
+| `DATABASE_URL` | 数据库连接字符串 |
+| `NEXTAUTH_SECRET` | NextAuth加密密钥 |
+| `NEXTAUTH_URL` | 应用完整URL |
+| `R2_ENDPOINT` | Cloudflare R2端点 |
+| `R2_ACCESS_KEY_ID` | R2访问密钥ID |
+| `R2_SECRET_ACCESS_KEY` | R2秘密访问密钥 |
+| `R2_BUCKET_NAME` | R2存储桶名称 |
 
-```
-prompt_site/
-├── app/                    # Next.js App Router
-│   ├── api/               # API路由
-│   │   ├── auth/          # 认证API
-│   │   ├── upload/        # 图片上传API
-│   │   ├── gallery/       # 图片列表API
-│   │   └── images/        # 图片详情API
-│   ├── gallery/           # 图片库页面
-│   ├── images/            # 图片详情页面
-│   ├── upload/            # 上传页面
-│   ├── layout.tsx         # 根布局
-│   ├── page.tsx           # 首页
-│   └── globals.css        # 全局样式
-├── components/            # React组件
-│   └── ui/               # UI组件 (shadcn/ui)
-├── lib/                  # 工具库
-│   ├── auth.ts           # NextAuth配置
-│   ├── db.ts             # 数据库连接
-│   ├── schema.ts         # 数据库模型
-│   ├── storage.ts        # R2存储配置
-│   └── utils.ts          # 工具函数
-├── drizzle.config.ts     # Drizzle配置
-├── next.config.js        # Next.js配置
-├── tailwind.config.ts    # Tailwind配置
-└── package.json          # 项目依赖
-```
+完整的环境变量配置和生成方法请参考 [DEPLOYMENT.md#环境变量配置](./DEPLOYMENT.md#环境变量配置)。
 
-## 数据库模型
+### 故障排除
 
-### Users (用户表)
-- id: 用户ID
-- name: 用户名
-- email: 邮箱
-- password: 密码
-- createdAt: 创建时间
+如果部署过程中遇到问题，请参考：
+- [DEPLOYMENT.md#故障排除指南](./DEPLOYMENT.md#故障排除指南)
 
-### Images (图片表)
-- id: 图片ID
-- userId: 用户ID
-- url: 图片URL
-- filename: 文件名
-- size: 文件大小
-- width: 宽度
-- height: 高度
-- createdAt: 创建时间
+---
 
-### Metadata (元数据表)
-- id: 元数据ID
-- imageId: 图片ID
-- positivePrompt: 正向提示词
-- negativePrompt: 负向提示词
-- model: AI模型
-- version: 模型版本
-- steps: 步数
-- cfg: CFG Scale
-- seed: 种子
-- sampler: 采样器
-- width: 生成宽度
-- height: 生成高度
-- createdAt: 创建时间
-
-### Loras (LoRA模型表)
-- id: LoRA ID
-- metadataId: 元数据ID
-- name: LoRA名称
-- weight: 权重
-
-## API接口
-
-### POST /api/upload
-上传图片并保存元数据
-
-**请求体**:
-- file: 图片文件
-- positivePrompt: 正向提示词
-- negativePrompt: 负向提示词
-- model: AI模型
-- version: 模型版本
-- steps: 步数
-- cfg: CFG Scale
-- seed: 种子
-- sampler: 采样器
-- width: 宽度
-- height: 高度
-- loras: LoRA模型数组
-
-### GET /api/gallery
-获取图片列表
-
-**查询参数**:
-- page: 页码 (默认1)
-- limit: 每页数量 (默认12)
-- search: 搜索关键词
-- model: 模型筛选
-
-### GET /api/images/:id
-获取图片详情
-
-**返回**:
-- 图片信息
-- 元数据
-- LoRA模型列表
-
-## 开发命令
-
-```bash
-npm run dev          # 启动开发服务器
-npm run build        # 构建生产版本
-npm run start        # 启动生产服务器
-npm run lint         # 代码检查
-
-npm run db:generate  # 生成数据库迁移
-npm run db:push      # 应用数据库更改
-npm run db:studio    # 打开数据库管理界面
-```
-
-## 许可证
-
-MIT License
+**享受使用AI绘图元数据管理系统！** 🚀
