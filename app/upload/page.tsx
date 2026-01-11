@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, Plus, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Image from 'next/image';
 
 interface Lora {
   name: string;
@@ -80,7 +81,7 @@ export default function UploadPage() {
       const reader = new FileReader();
       reader.onloadend = () => {
         // 生成压缩预览图，减少内存占用
-        const img = new Image();
+        const img = new (window.Image)();
         img.onload = () => {
           const canvas = document.createElement('canvas');
           const maxPreviewSize = 800;
@@ -138,19 +139,23 @@ export default function UploadPage() {
                 <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors">
                   {preview ? (
                     <div className="relative">
-                      <img
-                        src={preview}
-                        alt="Preview"
-                        className="max-h-96 mx-auto rounded-lg"
-                      />
+                      <div className="relative w-full max-h-96 mx-auto">
+                        <Image
+                          src={preview}
+                          alt="Preview"
+                          fill
+                          className="object-contain rounded-lg"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        />
+                      </div>
                       <Button
                         type="button"
                         variant="destructive"
                         size="sm"
                         className="absolute top-2 right-2"
                         onClick={() => {
-                          setFile(null);
                           setPreview("");
+                          setFile(null);
                         }}
                       >
                         <X className="h-4 w-4" />
